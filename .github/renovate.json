@@ -7,18 +7,23 @@
     ":semanticCommitTypeAll(chore)",
     "group:allNonMajor"
   ],
-  "pre-commit": {
-    "enabled": true
-  },
   "lockFileMaintenance": {
-    "enabled": true,
-    "automerge": true
+    "automerge": true,
+    "enabled": true
   },
   "packageRules": [
     {
+      "automerge": true,
       "description": "Merge non-major updates by themselves once CI is green; majors wait for a human.",
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "automerge": true
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ]
     }
-  ]
+  ],
+  "pre-commit": {
+    "enabled": true
+  }
 }
