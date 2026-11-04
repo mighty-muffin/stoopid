@@ -49,7 +49,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
       - name: Resolve version
         id: version
         env:
@@ -96,7 +96,7 @@ jobs:
     needs: [build, publish-testpypi]
     runs-on: ubuntu-latest
     steps:
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: false
       - name: Install from TestPyPI and run the CLI
