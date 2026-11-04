@@ -52,7 +52,8 @@ jobs:
           uv pip install --python "$RUNNER_TEMP/smoke" dist/*.whl
           got="$("$RUNNER_TEMP/smoke/bin/stoopid" --version)"
           test "$got" = "$expected" || { echo "::error::version $got != $expected"; exit 1; }
-          test "$("$RUNNER_TEMP/smoke/bin/stoopid" add 2 3)" = 5
+          # Product-agnostic: the commands change as agents build the concept (spec 0002).
+          "$RUNNER_TEMP/smoke/bin/stoopid" --help
       - uses: actions/upload-artifact@v7
         with:
           name: dist

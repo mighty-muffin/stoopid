@@ -26,7 +26,8 @@ Every concept must fit this frame; the agents may not change it.
 | Form | Python package `stoopid` on PyPI with a `stoopid` CLI | Keeps the name, the pipeline and the CLI smoke test working. |
 | Python support | 3.10 – 3.14 | Unchanged from 0001. |
 | Quality gates | ruff, ty, pytest with 100 % coverage, prek hooks | Unchanged from 0001; agents meet the same bar as humans. |
-| Runtime dependencies | Allowed | A useful tool will need libraries. The TestPyPI smoke test installs dependencies from PyPI first, then `stoopid` from TestPyPI with `--no-deps`, so the two indexes are never mixed in one resolve. |
+| Runtime dependencies | Allowed | A useful tool will need libraries. The TestPyPI smoke test installs `stoopid` from TestPyPI with `--no-deps`, then its declared dependencies from PyPI in a separate install, so the two indexes are never mixed in one resolve. |
+| CLI contract | `stoopid --version` prints the version and `stoopid --help` exits 0 | The CI and release smoke tests rely on only these two, so they survive any change of commands. |
 | Old commands | `add` / `mul` / `fib` are removed by the accepted concept's first roadmap issue, as a `feat!` | An honest breaking change; pre-1.0 rules turn it into a minor bump (0.2.0). |
 | Domain | Developer-tooling CLIs (something a Python developer would `pipx install`) | Demand is visible on GitHub and forums, and the maintainer is a likely user. |
 
@@ -50,7 +51,7 @@ All workflows run on the **Claude** engine (`ANTHROPIC_API_KEY`).
 | `planner` | A human adds `concept:accepted` to a proposal issue | Draft PR with `specs/0003-<concept>.md`; roadmap issues; closes the other open proposals |
 | `builder` | Daily on weekdays. Skipped while an open PR labelled `agent` exists. | One draft PR (label `agent`) for one `agent:ready` issue, test-first |
 | `builder-fix` | `/fix <notes>` comment on an agent PR; CI failing on an `agent/**` branch, once per PR (`agent:ci-retried`) | Commits pushed to the existing PR branch |
-| `improver` | Weekly | Improvement issues only, never PRs |
+| `improver` | Weekly; skipped until a concept is accepted | Up to 3 improvement issues (label `enhancement`, sub-issues of the tracking issue), never PRs |
 
 The accepted proposal issue stays open as the concept's tracking issue;
 closing it re-enables scheduled concept research.

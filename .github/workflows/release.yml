@@ -127,7 +127,10 @@ jobs:
         run: |
           venv="$RUNNER_TEMP/smoke"
           uv venv --no-project "$venv"
-          # The index can take a moment to serve a fresh upload.
+          # stoopid comes from TestPyPI with --no-deps; its dependencies then come
+          # from PyPI in a separate install, so the two indexes are never mixed in
+          # one resolve (no dependency confusion). The index can take a moment to
+          # serve a fresh upload.
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
             if uv pip install --python "$venv" --no-cache --no-deps \
                  --index-url https://test.pypi.org/simple/ "stoopid==$VERSION"; then
@@ -136,9 +139,20 @@ jobs:
             [ "$attempt" = 10 ] && { echo "::error::stoopid==$VERSION never became installable"; exit 1; }
             sleep 30
           done
+          "$venv/bin/python" - > "$RUNNER_TEMP/requirements.txt" <<'PY'
+          from importlib.metadata import requires
+          for req in requires("stoopid") or []:
+              if "extra ==" not in req:
+                  print(req)
+          PY
+          echo "Runtime dependencies:"; cat "$RUNNER_TEMP/requirements.txt"
+          if [ -s "$RUNNER_TEMP/requirements.txt" ]; then
+            uv pip install --python "$venv" --no-cache -r "$RUNNER_TEMP/requirements.txt"
+          fi
           got="$("$venv/bin/stoopid" --version)"
           test "$got" = "$VERSION" || { echo "::error::version $got != $VERSION"; exit 1; }
-          test "$("$venv/bin/stoopid" fib 10)" = 55
+          # Product-agnostic: the commands change as agents build the concept (spec 0002).
+          "$venv/bin/stoopid" --help
 
   publish-pypi:
     needs: [build, smoke-testpypi]
