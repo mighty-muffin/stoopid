@@ -64,7 +64,7 @@ possible.
 One workflow, `release.yml`, on every push to `main`:
 
 1. **release-please** — opens/updates the release PR, or, if the release PR
-   was just merged, tags `vX.Y.Z` and creates the GitHub Release.
+   was just merged, tags `stoopid-vX.Y.Z` (manifest mode puts the component in the tag) and creates the GitHub Release.
 2. **build** — once. Release: version from `pyproject.toml` (checked against
    the tag). Otherwise a **dev build**: `X.Y.(Z+1).devN`, N = `github.run_number`,
    set in CI only and never committed.
@@ -73,6 +73,10 @@ One workflow, `release.yml`, on every push to `main`:
    into a clean venv, run the CLI, check `--version`.
 5. **publish-pypi** — release runs only, after the smoke test passes.
 
+- Recovery: a manual `workflow_dispatch` run with `tag=stoopid-vX.Y.Z` skips
+  release-please and runs steps 2–5 for that existing tag. Re-running failed
+  jobs can't fix a broken workflow, because a re-run uses the workflow file from
+  the original commit.
 - Auth: **Trusted Publishing (OIDC)** only; no API tokens. GitHub
   environments `testpypi` and `pypi`, restricted to `main`, no required
   reviewers.

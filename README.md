@@ -53,11 +53,13 @@ prek run --all-files    # every check CI runs
    keeps a **release PR** open with the next version and the `CHANGELOG.md` entry.
    Until 1.0: `feat!` → minor, `feat`/`fix` → patch.
 3. The same push publishes a dev build `X.Y.(Z+1).devN` to TestPyPI.
-4. **Merging the release PR** tags `vX.Y.Z`, creates the GitHub Release, builds
+4. **Merging the release PR** tags `stoopid-vX.Y.Z`, creates the GitHub Release, builds
    once, publishes to TestPyPI, smoke-tests the install, then publishes to PyPI
    (Trusted Publishing + PEP 740 attestations, no API tokens).
 5. To force a version (e.g. 1.0.0), add `"release-as": "1.0.0"` to the package in
    `release-please-config.json` through a PR, then remove it after the release.
+6. If a release's publish fails, fix the workflow, then republish the existing
+   tag: `gh workflow run release.yml -f tag=stoopid-vX.Y.Z`.
 
 Dependencies, Actions and hooks are updated weekly by Renovate; non-major
 updates merge themselves when CI is green.

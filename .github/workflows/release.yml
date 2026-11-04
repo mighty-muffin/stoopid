@@ -7,12 +7,22 @@ name: Release
 #   - on a release run only, the same build is then published to PyPI.
 # Non-release runs publish a dev build X.Y.(Z+1).devN (N = run number).
 #
+# Manual run (workflow_dispatch) with an existing release tag, e.g.
+# `gh workflow run release.yml -f tag=stoopid-v0.1.0`: skips release-please and
+# (re)publishes that tag to TestPyPI, smoke-tests it, then publishes to PyPI.
+# Use it to recover a release whose publish failed.
+#
 # PyPI / TestPyPI trusted publishers must reference this file (release.yml)
 # and the environments `pypi` / `testpypi`.
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to (re)publish, e.g. stoopid-v0.1.0
+        required: true
 
 permissions: {}
 
@@ -22,6 +32,7 @@ concurrency:
 
 jobs:
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
@@ -42,32 +53,39 @@ jobs:
 
   build:
     needs: release-please
+    # release-please is skipped on manual runs; build anyway, but not if it failed.
+    if: ${{ !cancelled() && (needs.release-please.result == 'success' || needs.release-please.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
+      release: ${{ steps.version.outputs.release }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.sha }}
       - uses: astral-sh/setup-uv@v10.3.3
       - name: Resolve version
         id: version
         env:
-          RELEASE_CREATED: ${{ needs.release-please.outputs.release_created }}
-          TAG: ${{ needs.release-please.outputs.tag_name }}
+          RELEASE_CREATED: ${{ github.event_name == 'workflow_dispatch' || needs.release-please.outputs.release_created == 'true' }}
+          TAG: ${{ inputs.tag || needs.release-please.outputs.tag_name }}
           RUN_NUMBER: ${{ github.run_number }}
         run: |
           base="$(uv version --short)"
           if [ "$RELEASE_CREATED" = "true" ]; then
-            [ "v$base" = "$TAG" ] || { echo "::error::pyproject version $base does not match tag $TAG"; exit 1; }
+            # release-please tags are <component>-vX.Y.Z, e.g. stoopid-v0.1.0
+            [ "$TAG" = "stoopid-v$base" ] || { echo "::error::pyproject version $base does not match tag $TAG"; exit 1; }
             version="$base"
           else
             IFS=. read -r major minor patch <<< "$base"
             version="$major.$minor.$((patch + 1)).dev$RUN_NUMBER"
             uv version "$version" --frozen
           fi
-          echo "Publishing stoopid $version"
+          echo "Publishing stoopid $version (release: $RELEASE_CREATED)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "release=$RELEASE_CREATED" >> "$GITHUB_OUTPUT"
       - run: uv build
       - run: uvx twine check --strict dist/*
       - uses: actions/upload-artifact@v7
@@ -119,8 +137,8 @@ jobs:
           test "$("$venv/bin/stoopid" fib 10)" = 55
 
   publish-pypi:
-    needs: [release-please, build, smoke-testpypi]
-    if: needs.release-please.outputs.release_created == 'true'
+    needs: [build, smoke-testpypi]
+    if: needs.build.outputs.release == 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
