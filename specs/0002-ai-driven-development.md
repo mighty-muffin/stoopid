@@ -46,12 +46,14 @@ All workflows run on the **Claude** engine (`ANTHROPIC_API_KEY`).
 
 | Workflow | Trigger | Writes |
 |---|---|---|
-| `concept-research` | Weekly. Scheduled runs are skipped while a concept is accepted; manual runs always proceed. | 3–5 `concept:proposal` issues |
+| `concept-research` | Weekly. Scheduled runs are skipped while an open issue carries `concept:accepted`; manual runs always proceed. | 3–5 `concept:proposal` issues |
 | `planner` | A human adds `concept:accepted` to a proposal issue | Draft PR with `specs/0003-<concept>.md`; roadmap issues; closes the other open proposals |
 | `builder` | Daily on weekdays. Skipped while an open PR labelled `agent` exists. | One draft PR (label `agent`) for one `agent:ready` issue, test-first |
 | `builder` rework | `/fix <notes>` comment on an agent PR; one automatic attempt when CI fails on an agent PR | Commits pushed to the existing PR branch |
 | `improver` | Weekly | Improvement issues only, never PRs |
 
+The accepted proposal issue stays open as the concept's tracking issue;
+closing it re-enables scheduled concept research.
 The issue picked by the builder is the oldest open `agent:ready` issue.
 Agent PR titles follow Conventional Commits like any other PR.
 
@@ -81,8 +83,13 @@ gh-aw safe outputs, after its threat-detection job.
 
 | Workflow | Tools | Network |
 |---|---|---|
-| `concept-research`, `planner`, `improver` | web search, web fetch, GitHub read | defaults + web tools |
+| `concept-research`, `planner`, `improver` | web search, web fetch, GitHub read; bash limited to read-only text commands | `defaults`, `github`, `python`, plus the research sources below |
 | `builder` | edit; bash limited to `uv`, `pytest`, `ruff`, `ty`, `prek`, `git`; GitHub read | `python` and `github` ecosystems only |
+
+Research sources (both the firewall and Claude's hosted web search and fetch):
+GitHub, PyPI, Hacker News, Reddit, Stack Overflow, discuss.python.org,
+lobste.rs, dev.to. gh-aw also redacts links to any other domain in agent
+output, so evidence links must come from these sources.
 
 The builder cannot browse the open web, which limits what a prompt injection
 arriving through issue text can reach. Agent PRs may not touch
