@@ -49,7 +49,7 @@ All workflows run on the **Claude** engine (`ANTHROPIC_API_KEY`).
 | `concept-research` | Weekly. Scheduled runs are skipped while an open issue carries `concept:accepted`; manual runs always proceed. | 3–5 `concept:proposal` issues |
 | `planner` | A human adds `concept:accepted` to a proposal issue | Draft PR with `specs/0003-<concept>.md`; roadmap issues; closes the other open proposals |
 | `builder` | Daily on weekdays. Skipped while an open PR labelled `agent` exists. | One draft PR (label `agent`) for one `agent:ready` issue, test-first |
-| `builder` rework | `/fix <notes>` comment on an agent PR; one automatic attempt when CI fails on an agent PR | Commits pushed to the existing PR branch |
+| `builder-fix` | `/fix <notes>` comment on an agent PR; CI failing on an `agent/**` branch, once per PR (`agent:ci-retried`) | Commits pushed to the existing PR branch |
 | `improver` | Weekly | Improvement issues only, never PRs |
 
 The accepted proposal issue stays open as the concept's tracking issue;
@@ -87,7 +87,7 @@ gh-aw safe outputs, after its threat-detection job.
 | Workflow | Tools | Network |
 |---|---|---|
 | `concept-research`, `planner`, `improver` | web search, web fetch, GitHub read; bash limited to read-only text commands | `defaults`, `github`, `python`, plus the research sources below |
-| `builder` | edit; bash limited to `uv`, `pytest`, `ruff`, `ty`, `prek`, `git`; GitHub read | `python` and `github` ecosystems only |
+| `builder`, `builder-fix` | edit; bash limited to `uv`, `git` and read-only text commands (gates run as `uv run ruff/ty/pytest`); GitHub read | `defaults`, `python`, `github` |
 
 Research sources (both the firewall and Claude's hosted web search and fetch):
 GitHub, PyPI, Hacker News, Reddit, Stack Overflow, discuss.python.org,
@@ -95,8 +95,11 @@ lobste.rs, dev.to. gh-aw also redacts links to any other domain in agent
 output, so evidence links must come from these sources.
 
 The builder cannot browse the open web, which limits what a prompt injection
-arriving through issue text can reach. Agent PRs may not touch
-`.github/workflows/` (gh-aw protected files).
+arriving through issue text can reach. Builder branches are named
+`agent/<issue>-<slug>`. gh-aw protected files apply to builder PRs:
+`.github/`, `pyproject.toml`, `uv.lock` and other manifests still land, but
+with a `REQUEST_CHANGES` review listing them, so dependency changes get an
+explicit look. `README.md` is exempt.
 
 ### Memory
 
@@ -124,7 +127,8 @@ Worst case ≈ $5 per workflow per day. Loosen only after reviewing
 | `concept:proposal` | `concept-research` | A concept proposal issue |
 | `concept:accepted` | human | The chosen concept; triggers `planner` |
 | `agent:ready` | human | The builder may implement this issue |
-| `agent` | `builder` | PR authored by an agent |
+| `agent` | `builder`, `planner` | PR authored by an agent |
+| `agent:ci-retried` | `builder-fix` | The PR's one automatic CI retry is used up |
 
 ### Repository footprint
 
