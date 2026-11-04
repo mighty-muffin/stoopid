@@ -1,0 +1,135 @@
+name: Release
+
+# Every push to main:
+#   - release-please opens/updates the release PR, or tags + creates the
+#     GitHub Release when that PR has just been merged;
+#   - a build is published to TestPyPI and smoke-tested from there;
+#   - on a release run only, the same build is then published to PyPI.
+# Non-release runs publish a dev build X.Y.(Z+1).devN (N = run number).
+#
+# PyPI / TestPyPI trusted publishers must reference this file (release.yml)
+# and the environments `pypi` / `testpypi`.
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      # A GitHub App token (not GITHUB_TOKEN) so the release PR triggers CI.
+      - uses: actions/create-github-app-token@v3
+        id: app
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          token: ${{ steps.app.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  build:
+    needs: release-please
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - name: Resolve version
+        id: version
+        env:
+          RELEASE_CREATED: ${{ needs.release-please.outputs.release_created }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          base="$(uv version --short)"
+          if [ "$RELEASE_CREATED" = "true" ]; then
+            [ "v$base" = "$TAG" ] || { echo "::error::pyproject version $base does not match tag $TAG"; exit 1; }
+            version="$base"
+          else
+            IFS=. read -r major minor patch <<< "$base"
+            version="$major.$minor.$((patch + 1)).dev$RUN_NUMBER"
+            uv version "$version" --frozen
+          fi
+          echo "Publishing stoopid $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - run: uv build
+      - run: uvx twine check --strict dist/*
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  publish-testpypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/stoopid/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  smoke-testpypi:
+    needs: [build, publish-testpypi]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: false
+      - name: Install from TestPyPI and run the CLI
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          venv="$RUNNER_TEMP/smoke"
+          uv venv --no-project "$venv"
+          # The index can take a moment to serve a fresh upload.
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if uv pip install --python "$venv" --no-cache --no-deps \
+                 --index-url https://test.pypi.org/simple/ "stoopid==$VERSION"; then
+              break
+            fi
+            [ "$attempt" = 10 ] && { echo "::error::stoopid==$VERSION never became installable"; exit 1; }
+            sleep 30
+          done
+          got="$("$venv/bin/stoopid" --version)"
+          test "$got" = "$VERSION" || { echo "::error::version $got != $VERSION"; exit 1; }
+          test "$("$venv/bin/stoopid" fib 10)" = 55
+
+  publish-pypi:
+    needs: [release-please, build, smoke-testpypi]
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/stoopid/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
