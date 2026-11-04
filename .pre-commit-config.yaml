@@ -1,4 +1,14 @@
 # Run with prek (drop-in pre-commit replacement): `prek install && prek run -a`
+exclude: |
+  (?x)^(
+    \.pre-commit-config\.yaml$
+  )
+fail_fast: true
+default_stages:
+  - pre-commit
+default_install_hook_types:
+  - commit-msg
+  - pre-commit
 repos:
   - repo: meta
     hooks:
