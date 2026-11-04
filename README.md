@@ -65,6 +65,7 @@ prek run --all-files    # every check CI runs
   workflows/                     CI, PR-title check, release pipeline,
                                  agentic workflows (*.md → *.lock.yml)
   skills/agentic-workflows/      gh-aw skill for coding agents
+  aw/actions-lock.json           pinned gh-aw actions (generated)
   renovate.json                  dependency updates
   release-please-config.json     release-please settings
   .release-please-manifest.json  current released version
