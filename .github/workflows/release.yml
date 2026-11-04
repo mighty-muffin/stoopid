@@ -93,8 +93,11 @@ jobs:
           name: dist
           path: dist/
 
+  # Explicit result checks: without them, a skipped release-please (manual
+  # runs) skips every downstream job, even when build succeeded.
   publish-testpypi:
     needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     environment:
       name: testpypi
@@ -112,6 +115,7 @@ jobs:
 
   smoke-testpypi:
     needs: [build, publish-testpypi]
+    if: ${{ !cancelled() && needs.publish-testpypi.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: astral-sh/setup-uv@v10.3.3
@@ -138,7 +142,7 @@ jobs:
 
   publish-pypi:
     needs: [build, smoke-testpypi]
-    if: needs.build.outputs.release == 'true'
+    if: ${{ !cancelled() && needs.smoke-testpypi.result == 'success' && needs.build.outputs.release == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: pypi
