@@ -1,33 +1,93 @@
 # Run with prek (drop-in pre-commit replacement): `prek install && prek run -a`
+exclude: |
+  (?x)^(
+    \.pre-commit-config\.yaml$
+  )
+fail_fast: true
+default_stages:
+  - pre-commit
+default_install_hook_types:
+  - commit-msg
+  - pre-commit
 repos:
+  - repo: meta
+    hooks:
+      - id: identity
+        name: "meta | pre-commit hooks"
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.19.3
+    hooks:
+      - id: commitizen
+        fail_fast: true
+        name: "commitizen | validate commit messages"
+        stages:
+          - commit-msg
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
-      - id: check-merge-conflict
+        name: "git | block large files"
+        args: [--maxkb=2048]
+      - id: check-json
+        name: "general | check JSON files"
       - id: check-toml
+        name: "general | check TOML files"
+      - id: check-xml
+        name: "general | check XML files"
       - id: check-yaml
+        name: "general | check YAML files"
       - id: end-of-file-fixer
+        name: "general | fix end of file"
+      - id: check-executables-have-shebangs
+        name: "general | executables need a shebang"
+      - id: check-shebang-scripts-are-executable
+        name: "general | shebang scripts must be executable"
+      - id: forbid-submodules
+        name: "git | forbid submodules"
+      - id: mixed-line-ending
+        name: "general | fix line ending"
+        args:
+          - --fix=auto
+      - id: pretty-format-json
+        name: "general | prettify JSON files"
+        args:
+          - --autofix
+          - --no-ensure-ascii
       - id: trailing-whitespace
-        exclude: ^CHANGELOG\.md$
-
+        name: "general | remove trailing whitespace"
+  - repo: https://github.com/renovatebot/pre-commit-hooks
+    rev: 44.199.0
+    hooks:
+      - id: renovate-config-validator
+        name: "renovate | validate config"
+        args:
+          - --strict
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.13.7
     hooks:
       - id: uv-lock
-
+        name: "python | uv: lock dependencies"
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.17.3
     hooks:
       - id: ruff-check
+        name: "python | lint: run ruff-check"
         args: [--fix]
       - id: ruff-format
-
+        name: "python | lint: run ruff-format"
   - repo: local
     hooks:
       - id: ty
-        name: ty check
+        name: "python | lint: type checker"
         entry: uv run --locked ty check
+        language: system
+        types: [python]
+        pass_filenames: false
+  - repo: local
+    hooks:
+      - id: pytest
+        name: "python | test: run pytest"
+        entry: uv run pytest
         language: system
         types: [python]
         pass_filenames: false

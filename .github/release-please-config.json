@@ -1,21 +1,21 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-  "include-v-in-tag": true,
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
+  "include-v-in-tag": true,
   "packages": {
     ".": {
-      "release-type": "python",
-      "package-name": "stoopid",
-      "initial-version": "0.1.0",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         {
-          "type": "toml",
+          "jsonpath": "$.package[?(@.name.value=='stoopid')].version",
           "path": "uv.lock",
-          "jsonpath": "$.package[?(@.name.value=='stoopid')].version"
+          "type": "toml"
         }
-      ]
+      ],
+      "initial-version": "0.1.0",
+      "package-name": "stoopid",
+      "release-type": "python"
     }
   }
 }

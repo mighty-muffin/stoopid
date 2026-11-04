@@ -44,6 +44,21 @@ uv run pytest           # tests, 100 % coverage enforced
 prek run --all-files    # every check CI runs
 ```
 
+## Repository layout
+
+```text
+.github/
+  workflows/                     CI, PR-title check, release pipeline
+  renovate.json                  dependency updates
+  release-please-config.json     release-please settings
+  .release-please-manifest.json  current released version
+specs/                           design docs
+src/stoopid/                     the (meaningless) package
+tests/                           pytest suite, 100 % coverage
+pyproject.toml · uv.lock         project metadata and locked deps
+.pre-commit-config.yaml          prek hooks, same as CI
+```
+
 ## How releasing works
 
 1. Every PR title must follow [Conventional Commits](https://www.conventionalcommits.org/)
@@ -57,12 +72,9 @@ prek run --all-files    # every check CI runs
    once, publishes to TestPyPI, smoke-tests the install, then publishes to PyPI
    (Trusted Publishing + PEP 740 attestations, no API tokens).
 5. To force a version (e.g. 1.0.0), add `"release-as": "1.0.0"` to the package in
-   `release-please-config.json` through a PR, then remove it after the release.
+   `.github/release-please-config.json` through a PR, then remove it after the release.
 6. If a release's publish fails, fix the workflow, then republish the existing
    tag: `gh workflow run release.yml -f tag=stoopid-vX.Y.Z`.
 
 Dependencies, Actions and hooks are updated weekly by Renovate; non-major
 updates merge themselves when CI is green.
-
-One-time setup (PyPI publishers, release GitHub App, Renovate):
-`scripts/setup-wizard.sh`.

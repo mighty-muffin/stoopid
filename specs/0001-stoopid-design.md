@@ -54,7 +54,7 @@ possible.
 - First release **0.1.0** (`initial-version`). Pre-1.0 rules:
   `bump-minor-pre-major` + `bump-patch-for-minor-pre-major` (`feat!` → minor,
   `feat` → patch). Going to 1.0.0 is a deliberate act: set `release-as` in
-  `release-please-config.json` via a PR, then remove it after the release.
+  `.github/release-please-config.json` via a PR, then remove it after the release.
 - release-please also bumps the project's own entry in `uv.lock` (TOML
   extra-file), so `uv lock --check` stays green on the release PR.
 - Merging the release PR is the **only** human gate.
@@ -99,8 +99,7 @@ One workflow, `release.yml`, on every push to `main`:
 
 ## One-time manual setup
 
-Done through `scripts/setup-wizard.sh`, which walks a human through what only
-a human can do in a web UI:
+Done by hand, in web UIs:
 
 1. PyPI and TestPyPI **pending trusted publishers**: owner `mighty-muffin`,
    repo `stoopid`, workflow `release.yml`, environments `pypi` / `testpypi`.
