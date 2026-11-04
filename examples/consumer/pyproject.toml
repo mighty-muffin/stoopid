@@ -1,0 +1,6 @@
+[project]
+name = "consumer"
+version = "0.1.0"
+description = "Example project that uses stoopid as a dependency."
+requires-python = ">=3.10"
+dependencies = ["stoopid>=0.1"]

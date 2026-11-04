@@ -35,6 +35,16 @@ $ stoopid fib 10
 55
 ```
 
+## Use as a dependency
+
+```toml
+# your project's pyproject.toml
+[project]
+dependencies = ["stoopid>=0.1"]
+```
+
+A runnable example project lives in [`examples/consumer/`](examples/consumer/).
+
 ## Development
 
 ```sh
@@ -52,6 +62,7 @@ prek run --all-files    # every check CI runs
   renovate.json                  dependency updates
   release-please-config.json     release-please settings
   .release-please-manifest.json  current released version
+examples/consumer/               example project using stoopid as a dependency
 specs/                           design docs
 src/stoopid/                     the (meaningless) package
 tests/                           pytest suite, 100 % coverage
