@@ -1,6 +1,7 @@
 # 0001 — stoopid: a throwaway package with a real release pipeline
 
-Status: accepted (2026-11-04)
+Status: accepted (2026-11-04). *Purpose* and the "no runtime dependencies"
+rule superseded by [0002](0002-ai-driven-development.md).
 
 ## Purpose
 
