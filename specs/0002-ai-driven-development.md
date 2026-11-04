@@ -54,6 +54,9 @@ All workflows run on the **Claude** engine (`ANTHROPIC_API_KEY`).
 
 The accepted proposal issue stays open as the concept's tracking issue;
 closing it re-enables scheduled concept research.
+Roadmap issues are sub-issues of the tracking issue, titled with the
+Conventional Commit title their PR should carry. The spec PR may only touch
+`specs/*.md`.
 The issue picked by the builder is the oldest open `agent:ready` issue.
 Agent PR titles follow Conventional Commits like any other PR.
 
